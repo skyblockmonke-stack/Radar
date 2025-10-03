@@ -4,7 +4,7 @@ namespace DayZ {
     class Sakhal : public DMARender::IGameMap {
 
 
-	public:
+    public:
         Sakhal() : DMARender::IGameMap(std::string("Sakhal"), std::string("mapcontent\\sakhal.png")) {}
 
         // Inherited via IGameMap

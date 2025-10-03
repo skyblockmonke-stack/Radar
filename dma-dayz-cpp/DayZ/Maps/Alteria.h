@@ -5,7 +5,7 @@ namespace DayZ {
 
 
 	public:
-		Alteria() : DMARender::IGameMap(std::string("Alteria"), std::string("mapcontent\\alteria.png")) {}
+		Alteria() : DMARender::IGameMap(std::string("Alteria"), std::string("maps\\alteria.png")) {}
 
 		// Inherited via IGameMap
 		virtual ImVec2 translatePoint(const DMARender::Vector3& gamePoint) override;

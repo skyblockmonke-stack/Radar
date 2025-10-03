@@ -5,7 +5,7 @@ namespace DayZ {
 
 
 	public:
-		Lux() : DMARender::IGameMap(std::string("Lux"), std::string("mapcontent\\lux.png")) {}
+		Lux() : DMARender::IGameMap(std::string("Lux"), std::string("maps\\lux.png")) {}
 
 		// Inherited via IGameMap
 		virtual ImVec2 translatePoint(const DMARender::Vector3& gamePoint) override;

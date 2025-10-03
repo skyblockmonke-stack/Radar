@@ -1,0 +1,7 @@
+agents:
+  - name: qwen-coder
+    provider: openai
+    model: "qwen/qwen2.5-coder-14b"     # must match exactly from /v1/models
+    api_base: "http://192.168.1.156:1234/v1"   # replace with your host PC LAN IP
+    api_key: "dummy"                    # required by Continue, ignored by LM Studio
+    default: true                       # makes this the default agent

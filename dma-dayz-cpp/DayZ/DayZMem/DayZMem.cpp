@@ -14,15 +14,7 @@ DayZ::Mem::Mem(DMAMem::VmmManager* vmmManager)
 
 void DayZ::Mem::fetchBaseAddresses() {
 	auto pid = getPid();
-	if (pid == 0) {
-		std::cerr << "[ERROR] Game process not found. PID is 0." << std::endl;
-		return;
-	}
 	auto baseModule = staticManager.getModule(pid, EXE_NAME);
-	if (!baseModule.pvmEntry) {
-		std::cerr << "[ERROR] Base module not found for PID: " << pid << std::endl;
-		return;
-	}
 
 	this->worldAddress = baseModule.pvmEntry->vaBase + 0xF4B0A0;
 	std::cout << " [ + ] World Address: 0x" << std::hex << this->worldAddress << std::endl;
@@ -38,10 +30,6 @@ DWORD DayZ::Mem::getPid() {
 DayZ::WorldPointer DayZ::Mem::getWorld()
 {
 	DayZ::WorldPointer wp;
-	if (this->worldAddress == 0) {
-		std::cerr << "[ERROR] World address is 0, cannot resolve object." << std::endl;
-		return wp;
-	}
 	wp.resolveObject(getVMM(), getPid(), this->worldAddress);
 	return wp;
 }
@@ -49,10 +37,6 @@ DayZ::WorldPointer DayZ::Mem::getWorld()
 DayZ::NetworkManager DayZ::Mem::getNetworkManager()
 {
 	DayZ::NetworkManager nm;
-	if (this->networkManagerAddress == 0) {
-		std::cerr << "[ERROR] Network Manager address is 0, cannot resolve object." << std::endl;
-		return nm;
-	}
 	nm.resolveObject(getVMM(), getPid(), this->networkManagerAddress);
 	return nm;
 }

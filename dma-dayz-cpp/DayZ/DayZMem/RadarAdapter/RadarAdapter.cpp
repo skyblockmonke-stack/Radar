@@ -1,26 +1,20 @@
-'DayZ::RadarAdapter::drawAliveEntities': function does not take 6 arguments
-'void DayZ::RadarAdapter::drawAliveEntities(DayZ::Camera *,DMARender::IGameMap *,const DMARender::MapTransform &,const std::vector<std::shared_ptr<DayZ::Entity>,std::allocator<std::shared_ptr<DayZ::Entity>>> &,DayZ::Scoreboard *,std::unordered_set<uint32_t,std::hash<uint32_t>,std::equal_to<uint32_t>,std::allocator<uint32_t>> &)': overloaded member function not found in 'DayZ::RadarAdapter'
-illegal reference to non-static member 'DayZ::RadarAdapter::renderBridge'
-'DMARender::IRadar::WorldToRadar': a call of a non-static member function requires an object
-'DMARender::IRadar::WorldToRadar': a call of a non-static member function requires an object
-'DMARender::IRadar::drawBlipDirectional': a call of a non-static member function requires an object
-'DMARender::IRadar::drawBlip': a call of a non-static member function requires an object
-'DMARender::IRadar::drawBlip': a call of a non-static member function requires an object
-'DayZ::RadarAdapter::drawAliveEntities': function does not take 6 arguments#pragma once
+﻿#pragma once
 #include "RadarAdapter.h"
 #include "../../Structs/Scoreboard.h"
-#include <unordered_set>
 #include <unordered_set>
 
 extern ImVec2 g_mainPlayerScreenPos;
 extern ImVec2 g_mainPlayerScreenPosBuffered;
 
 // Constructor
+// #include "../../AimAssist/aim-assist.h"
+
 DayZ::RadarAdapter::RadarAdapter(std::shared_ptr<DayZ::MemoryUpdater> memUpdater, std::shared_ptr<DMARender::RenderBridge> renderBridge)
 	: memUpdater(memUpdater), renderBridge(renderBridge) {
 	loadFavoriteSteamIDs("steamids.txt"); // Read "steamids.txt" for your favorite admins
 	DayZ::Entity::initializeRareItems("rareitems.txt"); // Read "rareitems.txt" for rare itemlist, use TypeName e.g. CarBattery
-	createFonts(); // Ensure fonts are created during initialization
+	aimAssist = std::make_unique<DayZ::AimAssist>();
+	aimAssist->setEnabled(false); // Disabled by default
 }
 
 // draw loot and dead entities with filters
@@ -28,59 +22,40 @@ DayZ::RadarAdapter::RadarAdapter(std::shared_ptr<DayZ::MemoryUpdater> memUpdater
 #include <cctype> // for std::tolower
 #include <unordered_set>
 
-void DayZ::RadarAdapter::drawLoot(DayZ::Camera* camera, DMARender::IGameMap* curMap, const DMARender::MapTransform& mTransform, const std::vector<std::shared_ptr<DayZ::Entity>>& entities, std::unordered_set<uint32_t>& drawnNetworkIDs)
+void DayZ::RadarAdapter::drawLoot(DayZ::Camera* camera, DMARender::IGameMap* curMap, const DMARender::MapTransform& mTransform, const std::vector<std::shared_ptr<DayZ::Entity>>& entities)
 {
 	if (!renderBridge) return; // If the render bridge is not initialized, return
 
-	// Temporarily disabled renderBridge flag checks to test rendering
-	// bool showVehicles = renderBridge->shouldShowVehicles();
-	// bool showBoats = renderBridge->shouldShowBoats();
-	// bool showGrounditems = renderBridge->shouldShowGrounditems();
-	// bool showDeadAnimals = renderBridge->shouldShowDeadAnimals();
-	// bool showDeadPlayers = renderBridge->shouldShowDeadPlayers();
-	// bool showWeapons = renderBridge->shouldShowWeapons();
-	// bool showClothing = renderBridge->shouldShowClothing();
-	// bool showBackpacks = renderBridge->shouldShowBackpacks();
-	// bool showProxyMagazines = renderBridge->shouldShowProxyMagazines();
-	// bool showFood = renderBridge->shouldShowFood();
-	// bool showAmmo = renderBridge->shouldShowAmmo();
-	// bool showRare = renderBridge->shouldShowRare();
-	// bool showOptics = renderBridge->shouldShowOptics();
-	// bool showBase = renderBridge->shouldShowBase();
-	// bool showMelee = renderBridge->shouldShowMelee();
-	// bool showExplosives = renderBridge->shouldShowExplosives();
-	// int radarFont2 = renderBridge->shouldRadarFont2();
-	// int blipSize2 = renderBridge->shouldBlipSize2();
-	// int lootDistanceDeadzone = renderBridge->shouldLootDistanceDeadzone();
+	bool showVehicles = renderBridge->shouldShowVehicles();
+	bool showBoats = renderBridge->shouldShowBoats();
+	bool showGrounditems = renderBridge->shouldShowGrounditems();
+	bool showDeadAnimals = renderBridge->shouldShowDeadAnimals();
+	bool showDeadPlayers = renderBridge->shouldShowDeadPlayers();
+	bool showWeapons = renderBridge->shouldShowWeapons();
+	bool showClothing = renderBridge->shouldShowClothing();
+	bool showBackpacks = renderBridge->shouldShowBackpacks();
+	bool showProxyMagazines = renderBridge->shouldShowProxyMagazines();
+	bool showFood = renderBridge->shouldShowFood();
+	bool showAmmo = renderBridge->shouldShowAmmo();
+	bool showRare = renderBridge->shouldShowRare();
+	bool showOptics = renderBridge->shouldShowOptics();
+	bool showBase = renderBridge->shouldShowBase();
+	bool showMelee = renderBridge->shouldShowMelee();
+	bool showExplosives = renderBridge->shouldShowExplosives();
+	int radarFont2 = renderBridge->shouldRadarFont2();
+	int blipSize2 = renderBridge->shouldBlipSize2();
+	int lootDistanceDeadzone = renderBridge->shouldLootDistanceDeadzone();
 
-	bool showVehicles = true;
-	bool showBoats = true;
-	bool showGrounditems = true;
-	bool showDeadAnimals = true;
-	bool showDeadPlayers = true;
-	bool showWeapons = true;
-	bool showClothing = true;
-	bool showBackpacks = true;
-	bool showProxyMagazines = true;
-	bool showFood = true;
-	bool showAmmo = true;
-	bool showRare = true;
-	bool showOptics = true;
-	bool showBase = true;
-	bool showMelee = true;
-	bool showExplosives = true;
-	int radarFont2 = 12;
-	int blipSize2 = 4;
-	int lootDistanceDeadzone = 0;
+	std::unordered_set<uint32_t> drawnNetworkIDs;
 
 	auto mainPlayerName = renderBridge->shouldPlayerName();
 	auto mainPlayerPos = g_mainPlayerScreenPos;
 
 	for (auto const& item : entities) {
-		if (!item->isValid() || !item->FutureVisualStatePtr || !item->InventoryPtr || !item->EntityTypePtr)
+		if (!item->isValid())
 			continue;
 
-		// Re-enabled: Exclude main player entity by name (case-insensitive)
+		// Exclude main player entity by name (case-insensitive)
 		auto ident = item->getPlayerIdentity(memUpdater->getScoreboard().get());
 		bool isMainPlayer = false;
 		if (ident && ident->PlayerName) {
@@ -95,7 +70,7 @@ void DayZ::RadarAdapter::drawLoot(DayZ::Camera* camera, DMARender::IGameMap* cur
 		if (isMainPlayer)
 			continue;
 
-		// Re-enabled: Avoid duplicate blips by NetworkID
+		// Avoid duplicate blips by NetworkID
 		if (drawnNetworkIDs.find(item->NetworkID) != drawnNetworkIDs.end())
 			continue;
 		drawnNetworkIDs.insert(item->NetworkID);
@@ -106,8 +81,8 @@ void DayZ::RadarAdapter::drawLoot(DayZ::Camera* camera, DMARender::IGameMap* cur
 
 		float dist = camera->InvertedViewTranslation.Dist(item->FutureVisualStatePtr->position);
 
-		// Re-enabled: Exclude entities too close to main player position (within 1.5 units)
-		auto screenPos = this->WorldToRadar(curMap, mTransform, item->FutureVisualStatePtr->position);
+		// Exclude entities too close to main player position (within 1.5 units)
+		auto screenPos = WorldToRadar(curMap, mTransform, item->FutureVisualStatePtr->position);
 		float dx = screenPos.x - mainPlayerPos.x;
 		float dy = screenPos.y - mainPlayerPos.y;
 		float distToMainPlayer = sqrt(dx * dx + dy * dy);
@@ -153,7 +128,6 @@ void DayZ::RadarAdapter::drawLoot(DayZ::Camera* camera, DMARender::IGameMap* cur
 			continue;
 		}
 
-		// Re-enabled: if (dist < lootDistanceDeadzone)
 		if (dist < lootDistanceDeadzone)
 			continue;
 
@@ -165,13 +139,12 @@ void DayZ::RadarAdapter::drawLoot(DayZ::Camera* camera, DMARender::IGameMap* cur
 			displayName = "Unknown";
 		}
 
-		std::string displayNameWithPostfix = displayName + postFix;
-		drawBlip(screenPos, blipSize2, textCol, radarFont2, 1, { displayNameWithPostfix });
+		drawBlip(screenPos, blipSize2, textCol, radarFont2, 1, { displayName + postFix });
 
 	}
 }
 
-static void DayZ::RadarAdapter::drawAliveEntities(DayZ::Camera* camera, DMARender::IGameMap* curMap, const DMARender::MapTransform& mTransform, const std::vector<std::shared_ptr<DayZ::Entity>>& entities, Scoreboard* scoreboard, std::unordered_set<uint32_t>& drawnNetworkIDs, std::shared_ptr<DMARender::RenderBridge> renderBridge)
+void DayZ::RadarAdapter::drawAliveEntities(DayZ::Camera* camera, DMARender::IGameMap* curMap, const DMARender::MapTransform& mTransform, const std::vector<std::shared_ptr<DayZ::Entity>>& entities, Scoreboard* scoreboard)
 {
 	// neutralTransform for my followplayer function
 	DMARender::MapTransform neutralTransform = mTransform;
@@ -190,12 +163,11 @@ static void DayZ::RadarAdapter::drawAliveEntities(DayZ::Camera* camera, DMARende
 	int zombiesBlipSize = renderBridge->shouldZombiesBlipSize();
 	int animalsBlipSize = renderBridge->shouldAnimalsBlipSize();
 
+	std::unordered_set<uint32_t> drawnNetworkIDs;
+
 	for (const auto& ent : entities) {
-		totalEntities++;
-		if (!ent->isValid() || ent->isDead) {
-			skippedInvalid++;
+		if (!ent->isValid() || ent->isDead)
 			continue;
-		}
 
 		ImU32 blipColor;
 		bool isMainPlayer = false;
@@ -221,10 +193,12 @@ static void DayZ::RadarAdapter::drawAliveEntities(DayZ::Camera* camera, DMARende
 
 		// Exclude main player from being drawn twice
 		if (isMainPlayer) {
-			skippedMainPlayer++;
 			// update global (static) Pos if MainPlayer
-			// Removed smoothing to ensure immediate update
-			g_mainPlayerScreenPos = neutralPos;
+			float smoothFactor = 0.5f;  // Adjustable
+			g_mainPlayerScreenPos = ImVec2(
+				lastValidScreenPos.x + (neutralPos.x - lastValidScreenPos.x) * smoothFactor,
+				lastValidScreenPos.y + (neutralPos.y - lastValidScreenPos.y) * smoothFactor
+			);
 			lastValidScreenPos = g_mainPlayerScreenPos;
 
 			// Skip drawing this blip here to avoid duplicate
@@ -236,12 +210,12 @@ static void DayZ::RadarAdapter::drawAliveEntities(DayZ::Camera* camera, DMARende
 			continue;
 		drawnNetworkIDs.insert(ent->NetworkID);
 
-		// Temporarily disabled: Exclude entities too close to main player position (within 1.5 units)
-		// float dx = screenPos.x - g_mainPlayerScreenPos.x;
-		// float dy = screenPos.y - g_mainPlayerScreenPos.y;
-		// float distToMainPlayer = sqrt(dx * dx + dy * dy);
-		// if (distToMainPlayer < 1.5f)
-		// 	continue;
+		// Exclude entities too close to main player position (within 1.5 units)
+		float dx = screenPos.x - g_mainPlayerScreenPos.x;
+		float dy = screenPos.y - g_mainPlayerScreenPos.y;
+		float distToMainPlayer = sqrt(dx * dx + dy * dy);
+		if (distToMainPlayer < 1.5f)
+			continue;
 
 		// ALIFE ENTITIES colors
 		if (ent->isPlayer()) {
@@ -282,22 +256,18 @@ static void DayZ::RadarAdapter::drawAliveEntities(DayZ::Camera* camera, DMARende
 				}
 			}
 			if (!isMainPlayer) {
-				std::string distStr = std::format("{:.0f}m", dist);
-				infoText.push_back(distStr);
+				infoText.push_back(std::format("{:.0f}m", dist));
 			}
 		}
 
 		if (ent->isPlayer()) {
-			this->drawBlipDirectional(screenPos, blipSize, blipColor, radarFont, 1, infoText, ent->FutureVisualStatePtr->getRotationCorrected(), aimLineLength);
-			drawnBlips++;
+			drawBlipDirectional(screenPos, blipSize, blipColor, radarFont, 1, infoText, ent->FutureVisualStatePtr->getRotationCorrected(), aimLineLength);
 		}
 		else if (ent->isZombie()) {
-			this->drawBlip(screenPos, zombiesBlipSize, blipColor, radarFont, 1, infoText);
-			drawnBlips++;
+			drawBlip(screenPos, zombiesBlipSize, blipColor, radarFont, 1, infoText);
 		}
 		else if (ent->isAnimal()) {
-			this->drawBlip(screenPos, animalsBlipSize, blipColor, radarFont, 1, infoText);
-			drawnBlips++;
+			drawBlip(screenPos, animalsBlipSize, blipColor, radarFont, 1, infoText);
 		}
 		else {
 			continue;
@@ -470,110 +440,97 @@ void DayZ::RadarAdapter::drawServerPlayerList(std::shared_ptr<DayZ::Scoreboard> 
 
 void DayZ::RadarAdapter::DrawOverlay(DMARender::IGameMap* curMap, const DMARender::MapTransform& mTransform)
 {
-	if (!curMap) return;
-
 	auto camera = memUpdater->getCamera();
 	auto scoreboardPtr = memUpdater->getScoreboard();
 
 	if (!camera || !scoreboardPtr) {
+		ImGui::Text("DMA not attached or DayZ not running. Attach to process first.");
 		return; // Prevent crashes if camera or scoreboard are null
 	}
 
-	// Debug info
-	static int drawnBlips = 0;
-	static int totalEntities = 0;
-	static int skippedMainPlayer = 0;
-	static int skippedDuplicate = 0;
-	static int skippedClose = 0;
-	static int skippedInvalid = 0;
-	drawnBlips = 0; // Reset each frame
-	totalEntities = 0;
-	skippedMainPlayer = 0;
-	skippedDuplicate = 0;
-	skippedClose = 0;
-	skippedInvalid = 0;
-	ImGui::Begin("Radar Debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-	ImGui::Text("Camera: %s", camera ? "Valid" : "Null");
-	ImGui::Text("Scoreboard: %s", scoreboardPtr ? "Valid" : "Null");
-	ImGui::Text("SlowEntityTable: %zu", memUpdater->getSlowEntityTable()->resolvedEntities.size());
-	ImGui::Text("ItemTable: %zu", memUpdater->getItemTable()->resolvedEntities.size());
-	ImGui::Text("NearEntityTable: %zu", memUpdater->getNearEntityTable()->resolvedEntities.size());
-	ImGui::Text("FarEntityTable: %zu", memUpdater->getFarEntityTable()->resolvedEntities.size());
-	ImGui::Text("RadarFont: %s", radarFont ? "Valid" : "Null");
-	ImGui::Text("Total Entities: %d", totalEntities);
-	ImGui::Text("Skipped Invalid: %d", skippedInvalid);
-	ImGui::Text("Skipped Main Player: %d", skippedMainPlayer);
-	ImGui::Text("Skipped Duplicate: %d", skippedDuplicate);
-	ImGui::Text("Skipped Close: %d", skippedClose);
-	ImGui::Text("Drawn Blips: %d", drawnBlips);
-	ImGui::End();
+	if (!curMap) {
+		ImGui::Text("Map not loaded. Ensure you are in a supported map (Chernarus, Livonia, etc.).");
+		return; // Prevent crashes if map is not loaded
+	}
 
-	std::unordered_set<uint32_t> drawnNetworkIDs;
-
-	if (radarFont) ImGui::PushFont(radarFont);
+	//ImGui::PushFont(radarFont);
+	//ImGui::PopFont();
 
 	// draw radar entities/items
-	drawLoot(camera.get(), curMap, mTransform, memUpdater->getSlowEntityTable()->resolvedEntities, drawnNetworkIDs);
-	drawLoot(camera.get(), curMap, mTransform, memUpdater->getItemTable()->resolvedEntities, drawnNetworkIDs);
-	drawLoot(camera.get(), curMap, mTransform, memUpdater->getNearEntityTable()->resolvedEntities, drawnNetworkIDs);
-	drawLoot(camera.get(), curMap, mTransform, memUpdater->getFarEntityTable()->resolvedEntities, drawnNetworkIDs);
-	drawAliveEntities(camera.get(), curMap, mTransform, memUpdater->getFarEntityTable()->resolvedEntities, scoreboardPtr.get(), drawnNetworkIDs, renderBridge);
-	drawAliveEntities(camera.get(), curMap, mTransform, memUpdater->getNearEntityTable()->resolvedEntities, scoreboardPtr.get(), drawnNetworkIDs, renderBridge);
+	drawLoot(camera.get(), curMap, mTransform, memUpdater->getSlowEntityTable()->resolvedEntities);
+	drawLoot(camera.get(), curMap, mTransform, memUpdater->getItemTable()->resolvedEntities);
+	drawLoot(camera.get(), curMap, mTransform, memUpdater->getNearEntityTable()->resolvedEntities);
+	drawLoot(camera.get(), curMap, mTransform, memUpdater->getFarEntityTable()->resolvedEntities);
+	drawAliveEntities(camera.get(), curMap, mTransform, memUpdater->getFarEntityTable()->resolvedEntities, scoreboardPtr.get());
+	drawAliveEntities(camera.get(), curMap, mTransform, memUpdater->getNearEntityTable()->resolvedEntities, scoreboardPtr.get());
 
-	if (radarFont) ImGui::PopFont();
+	// ImGui toggle for aim assist - commented out to prevent map loading issues
+	// TODO: re-enable after resolving ImGui context issues
+	/*
+	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Aim Assist Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		bool enabled = aimAssist ? aimAssist->isEnabled() : false;
+		if (ImGui::Checkbox("Enable Aim Assist", &enabled)) {
+			if (aimAssist) {
+				aimAssist->setEnabled(enabled);
+			}
+		}
+		ImGui::End();
+	}
+	*/
+
+	// Update aim assist with near and far entities - commented out to fix map loading
+	/*
+	if (aimAssist) {
+		aimAssist->update(camera, memUpdater->getNearEntityTable()->resolvedEntities, scoreboardPtr);
+		aimAssist->update(camera, memUpdater->getFarEntityTable()->resolvedEntities, scoreboardPtr);
+	}
+	*/
+
+	//ImGui::PopFont();
+
+	// ImGui toggle for aim assist - commented out to prevent issues
+	/*
+	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Aim Assist Settings", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		bool enabled = aimAssist ? aimAssist->isEnabled() : false;
+		if (ImGui::Checkbox("Enable Aim Assist", &enabled)) {
+			if (aimAssist) {
+				aimAssist->setEnabled(enabled);
+			}
+		}
+		ImGui::End();
+	}
+	*/
 
 	// draw localplayerlist
-	if (renderBridge && renderBridge->shouldShowPlayerList()) {
+	if (renderBridge->shouldShowPlayerList()) {
 		drawPlayerList(camera.get(), scoreboardPtr.get());
 	}
 	// draw globalplayerlist from scoreboard
-	if (renderBridge && renderBridge->shouldShowServerPlayerList()) {
+	if (renderBridge->shouldShowServerPlayerList()) {
 		drawServerPlayerList(scoreboardPtr);
 	}
+
+	// Aim assist update (commented out by default to keep application functional)
+	// if (aimAssist && aimAssist->isEnabled()) {
+	// 	aimAssist->update(camera, memUpdater->getNearEntityTable()->resolvedEntities, scoreboardPtr);
+	// 	aimAssist->update(camera, memUpdater->getFarEntityTable()->resolvedEntities, scoreboardPtr);
+	// }
 }
 
 void DayZ::RadarAdapter::createFonts()
 {
-	if (!ImGui::GetCurrentContext()) {
-		std::cerr << "[ERROR] ImGui context not created in RadarAdapter::createFonts." << std::endl;
-		return;
-	}
-	std::string fontPath = "C:\\Windows\\Fonts\\Arial.ttf";
-	std::ifstream fontFile(fontPath);
-	if (!fontFile.good()) {
-		std::cerr << "[ERROR] Font file not found: " << fontPath << std::endl;
-		return;
-	}
-	fontFile.close();
-
-	try {
 		ImFontConfig config;
 		config.OversampleH = 3;
 		config.OversampleV = 1;
 		config.GlyphExtraSpacing.x = 1.0f;
+		radarFont = ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 12, &config);
 
-		// Check if ImGui font atlas is valid before adding fonts
-		if (ImGui::GetIO().Fonts) {
-			radarFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), 12, &config);
-			if (!radarFont) {
-				std::cerr << "[ERROR] Failed to load radar font from: " << fontPath << std::endl;
-			}
-
-			// add small font
-			ImFontConfig configSmall;
-			configSmall.SizePixels = 12.0f; // reduce size?
-			tableFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), 14, &configSmall);
-			if (!tableFont) {
-				std::cerr << "[ERROR] Failed to load table font from: " << fontPath << std::endl;
-			}
-		} else {
-			std::cerr << "[ERROR] ImGui font atlas is null, cannot load fonts." << std::endl;
-		}
-	} catch (const std::exception& e) {
-		std::cerr << "[ERROR] Exception in createFonts: " << e.what() << std::endl;
-	} catch (...) {
-		std::cerr << "[ERROR] Unknown exception in createFonts." << std::endl;
-	}
+		// add small font
+		ImFontConfig configSmall;
+		configSmall.SizePixels = 12.0f; // reduce size?
+		tableFont = ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 14, &configSmall);
 }
 
 void DayZ::RadarAdapter::loadFavoriteSteamIDs(const std::string& filePath) {

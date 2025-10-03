@@ -1,5 +1,4 @@
 #include "ImageAllocator.h"
-#include <iostream>  // Added for std::cerr and std::endl
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -10,10 +9,8 @@ bool DMARender::ImageAllocator::LoadTextureFromFile(const char* filename, ID3D11
     int image_width = 0;
     int image_height = 0;
     unsigned char* image_data = stbi_load(filename, &image_width, &image_height, NULL, 4);
-    if (image_data == NULL) {
-        std::cerr << "[ERROR] Failed to load image file: " << filename << std::endl;
+    if (image_data == NULL)
         return false;
-    }
 
     // Create texture
     D3D11_TEXTURE2D_DESC desc;

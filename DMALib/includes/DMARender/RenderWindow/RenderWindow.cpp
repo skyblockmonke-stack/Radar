@@ -1,6 +1,5 @@
 #include "RenderWindow.h"
-#include <iostream>
-#include <fstream>
+//#include <iostream>
 
 ImVec2 g_mainPlayerScreenPos = ImVec2(0, 0);
 ImVec2 g_mainPlayerScreenPosBuffered = ImVec2(0, 0);
@@ -193,12 +192,8 @@ void DMARender::RenderWindow::drawOverlayHandler()
 void DMARender::RenderWindow::drawMapHandler() {
     // Map Selection and Radar Setup
     auto maps = bridge->getMapManager()->getMaps();
-    if (maps.size() == 0) {
-        ImGui::Begin("Radar Debug", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-        ImGui::Text("No maps loaded");
-        ImGui::End();
+    if (maps.size() == 0)
         return;
-    }
     static int map_current_index = 0;
     static MapTransform mTrans = MapTransform();
 
@@ -437,7 +432,7 @@ void DMARender::RenderWindow::drawMapHandler() {
     // **Update gepufferte Spielerposition vor Nutzung**
     g_mainPlayerScreenPosBuffered = g_mainPlayerScreenPos;
 
-    // Falls Follow Player aktiviert ist, passe mTrans basierend auf der Fenstergrï¿½ï¿½e an
+    // Falls Follow Player aktiviert ist, passe mTrans basierend auf der Fenstergröße an
     if (followPlayerEnabled) {
         float winWidth = static_cast<float>(rect.right - rect.left);
         float winHeight = static_cast<float>(rect.bottom - rect.top);
@@ -451,10 +446,10 @@ void DMARender::RenderWindow::drawMapHandler() {
         // Debugging
         //std::cout << "Fensterzentrum: (" << centerX << ", " << centerY << ")\n";
         //std::cout << "MainPlayerPos (Buffered): (" << g_mainPlayerScreenPosBuffered.x << ", " << g_mainPlayerScreenPosBuffered.y << ")\n";
-        //std::cout << "Gewï¿½nschter Offset: (" << desiredOffsetX << ", " << desiredOffsetY << ")\n";
+        //std::cout << "Gewünschter Offset: (" << desiredOffsetX << ", " << desiredOffsetY << ")\n";
         //std::cout << "Aktueller Offset: (" << mTrans.dragOffsetX << ", " << mTrans.dragOffsetY << ")\n";
 
-        // Schwellwert: nur anpassen, wenn der Unterschied grï¿½ï¿½er als z. B. 5 Pixel ist
+        // Schwellwert: nur anpassen, wenn der Unterschied größer als z. B. 5 Pixel ist
         const float threshold = 5.0f;
         if (fabs(desiredOffsetX - mTrans.dragOffsetX) > threshold) {
             mTrans.dragOffsetX = desiredOffsetX;
@@ -684,39 +679,12 @@ void DMARender::RenderWindow::CleanupRenderTarget()
 
 void DMARender::RenderWindow::CreateFonts()
 {
-    if (!ImGui::GetCurrentContext()) {
-        std::cerr << "[ERROR] ImGui context not created in RenderWindow::CreateFonts." << std::endl;
-        return;
-    }
     ImGui::GetIO().Fonts->AddFontDefault();
-    std::string fontPath = "C:\\Windows\\Fonts\\Arial.ttf";
-    std::ifstream fontFile(fontPath);
-    if (!fontFile.good()) {
-        std::cerr << "[ERROR] Font file not found: " << fontPath << std::endl;
-        return;
-    }
-    fontFile.close();
-
-    try {
-        ImFontConfig config;
-        config.OversampleH = 2;
-        config.OversampleV = 1;
-        config.GlyphExtraSpacing.x = 1.0f;
-
-        // Check if ImGui font atlas is valid before adding fonts
-        if (ImGui::GetIO().Fonts) {
-            windowIdentifyFont = ImGui::GetIO().Fonts->AddFontFromFileTTF(fontPath.c_str(), 256, &config);
-            if (!windowIdentifyFont) {
-                std::cerr << "[ERROR] Failed to load window identify font from: " << fontPath << std::endl;
-            }
-        } else {
-            std::cerr << "[ERROR] ImGui font atlas is null, cannot load fonts." << std::endl;
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "[ERROR] Exception in CreateFonts: " << e.what() << std::endl;
-    } catch (...) {
-        std::cerr << "[ERROR] Unknown exception in CreateFonts." << std::endl;
-    }
+    ImFontConfig config;
+    config.OversampleH = 2;
+    config.OversampleV = 1;
+    config.GlyphExtraSpacing.x = 1.0f;
+    windowIdentifyFont = ImGui::GetIO().Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Arial.ttf", 256, &config);
 }
 
 #ifndef WM_DPICHANGED
